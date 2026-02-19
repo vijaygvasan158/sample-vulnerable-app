@@ -9,13 +9,16 @@ Resources:
       BucketName: sample-app-bucket-12345
       # Fixed Issue 1: Removed public read ACL for security
       AccessControl: Private                 # Changed from PublicRead to Private to prevent public access
+      # Added versioning configuration to protect against accidental deletions and maintain object history
+      VersioningConfiguration:
+        Status: Enabled                     # Enable versioning for the S3 bucket
       # Added cross-region replication configuration for improved data durability and availability
       ReplicationConfiguration:
         Role: !GetAtt ReplicationRole.Arn
         Rules:
           - Destination:
               Bucket: !Sub 'arn:aws:s3:::${AWS::StackName}-replica'
-              # Removed invalid 'Region' property as it's not allowed in S3 bucket replication configuration
+              Region: us-west-2  # Replication to a different region
             Status: Enabled
             Priority: 1
             DeleteMarkerReplication:
