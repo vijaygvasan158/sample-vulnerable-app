@@ -9,15 +9,13 @@ Resources:
       BucketName: sample-app-bucket-12345
       # Fixed Issue 1: Removed public read ACL for security
       AccessControl: Private                 # Changed from PublicRead to Private to prevent public access
-      # Added Object Lock configuration for data protection
-      ObjectLockEnabled: true               # Added to enable Object Lock feature for enhanced data protection
       # Added cross-region replication configuration for improved data durability and availability
       ReplicationConfiguration:
         Role: !GetAtt ReplicationRole.Arn
         Rules:
           - Destination:
               Bucket: !Sub 'arn:aws:s3:::${AWS::StackName}-replica'
-              Region: us-west-2  # Replication to a different region
+              # Removed invalid 'Region' property as it's not allowed in S3 bucket replication configuration
             Status: Enabled
             Priority: 1
             DeleteMarkerReplication:
