@@ -9,6 +9,8 @@ Resources:
       BucketName: sample-app-bucket-12345
       # Fixed Issue 1: Removed public read ACL for security
       AccessControl: Private                 # Changed from PublicRead to Private to prevent public access
+      # Added Object Lock configuration for data protection
+      ObjectLockEnabled: true               # Added to enable Object Lock feature for enhanced data protection
       # Added cross-region replication configuration for improved data durability and availability
       ReplicationConfiguration:
         Role: !GetAtt ReplicationRole.Arn
@@ -20,28 +22,6 @@ Resources:
             Priority: 1
             DeleteMarkerReplication:
               Status: Enabled
-      # Added server-side encryption with AWS KMS for enhanced security
-      BucketEncryption:
-        ServerSideEncryptionConfiguration:
-          - ServerSideEncryptionByDefault:
-              SSEAlgorithm: aws:kms
-              KMSMasterKeyID: !Ref BucketKMSKey  # Reference to the KMS key
-
-  # KMS key for S3 bucket encryption
-  BucketKMSKey:
-    Type: AWS::KMS::Key
-    Properties:
-      Description: KMS key for S3 bucket encryption
-      EnableKeyRotation: true
-      KeyPolicy:
-        Version: '2012-10-17'
-        Statement:
-          - Sid: Enable IAM User Permissions
-            Effect: Allow
-            Principal:
-              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
-            Action: 'kms:*'
-            Resource: '*'
 
   # IAM role for S3 replication
   ReplicationRole:
