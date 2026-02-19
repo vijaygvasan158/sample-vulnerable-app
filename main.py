@@ -3,6 +3,11 @@ import sqlite3
 import subprocess
 import ast  # Using ast.literal_eval instead of pickle for safe deserialization
 import os
+import logging  # Added logging for secure information handling
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # hardcoded API token (Issue 1)
 API_TOKEN = "AKIAEXAMPLERAWTOKEN12345"
@@ -43,12 +48,13 @@ if __name__ == "__main__":
     add_user("alice", "alicepass")
     add_user("bob", "bobpass")
 
-    # Demonstrate risky calls
-    print("API_TOKEN in use:", API_TOKEN)
-    print(get_user("alice' OR '1'='1"))  # demonstrates SQLi payload
-    print(run_shell("echo Hello && whoami"))
+    # Demonstrate risky calls - Modified to use secure logging
+    # Fixed: Removed direct printing of sensitive information
+    logger.info("API authentication initialized")  # Removed token exposure
+    logger.debug(get_user("alice' OR '1'='1"))  # demonstrates SQLi payload
+    logger.info(run_shell("echo Hello && whoami"))
     try:
         # attempting to deserialize an arbitrary blob (will likely raise)
         deserialize_blob(b"not-a-valid-pickle")
     except Exception as e:
-        print("Deserialization error:", e)
+        logger.error("Deserialization error: %s", str(e))
