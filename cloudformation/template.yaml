@@ -3,7 +3,25 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: Sample CloudFormation template for an application
 
 Resources:
-  # Create the replication role first to avoid circular dependency
+  AppBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: sample-app-bucket-12345
+      # Fixed Issue 1: Removed public read ACL for security
+      AccessControl: Private                 # Changed from PublicRead to Private to prevent public access
+      # Added cross-region replication configuration for improved data durability and availability
+      ReplicationConfiguration:
+        Role: !GetAtt ReplicationRole.Arn
+        Rules:
+          - Destination:
+              Bucket: !Sub 'arn:aws:s3:::${AWS::StackName}-replica'
+              Region: us-west-2  # Replication to a different region
+            Status: Enabled
+            Priority: 1
+            DeleteMarkerReplication:
+              Status: Enabled
+
+  # IAM role for S3 replication
   ReplicationRole:
     Type: AWS::IAM::Role
     Properties:
@@ -23,35 +41,19 @@ Resources:
                 Action:
                   - s3:GetReplicationConfiguration
                   - s3:ListBucket
-                Resource: !Sub 'arn:aws:s3:::${AWS::StackName}-bucket'  # Use stack name instead of direct reference
+                Resource: !GetAtt AppBucket.Arn
               - Effect: Allow
                 Action:
                   - s3:GetObjectVersionForReplication
                   - s3:GetObjectVersionAcl
                   - s3:GetObjectVersionTagging
-                Resource: !Sub 'arn:aws:s3:::${AWS::StackName}-bucket/*'  # Use stack name instead of direct reference
+                Resource: !Sub '${AppBucket.Arn}/*'
               - Effect: Allow
                 Action:
                   - s3:ReplicateObject
                   - s3:ReplicateDelete
                   - s3:ReplicateTags
                 Resource: !Sub 'arn:aws:s3:::${AWS::StackName}-replica/*'
-
-  AppBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !Sub '${AWS::StackName}-bucket'  # Use stack name for bucket naming
-      AccessControl: Private
-      ReplicationConfiguration:
-        Role: !GetAtt ReplicationRole.Arn  # Now ReplicationRole is created first
-        Rules:
-          - Destination:
-              Bucket: !Sub 'arn:aws:s3:::${AWS::StackName}-replica'
-              Region: us-west-2
-            Status: Enabled
-            Priority: 1
-            DeleteMarkerReplication:
-              Status: Enabled
 
   AppRole:
     Type: AWS::IAM::Role
@@ -81,4 +83,5 @@ Resources:
         - IpProtocol: tcp
           FromPort: 22
           ToPort: 22
-          CidrIp: 0.0.0.0/0                     # Issue 4: SSH open to the world
+          # Fixed: Restricted SSH access to specific IP range instead of 0.0.0.0/0
+          CidrIp: 10.0.0.0/24                     # Changed from 0.0.0.0/0 to internal network CIDR
